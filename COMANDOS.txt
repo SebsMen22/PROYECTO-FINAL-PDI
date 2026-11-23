@@ -4,7 +4,7 @@ C:\Users\Sebas\Documents\GitHub\ProyectoPDI
 
 ====================================================================
 0. SIEMPRE PRIMERO
-====================================================================
+===================================================================
 cd C:\Users\Sebas\Documents\GitHub\ProyectoPDI
 .venv\Scripts\activate
 (debe aparecer (.venv) al inicio de la linea)
