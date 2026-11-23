@@ -16,4 +16,3 @@ lab_deteccion*.zip
 *.pth
 *.pt
 *.pkl
-*.joblib
