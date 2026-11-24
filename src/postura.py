@@ -12,11 +12,18 @@ Combinadas dan: 'brazos', 'piernas', 'ambas' o 'ninguna'.
 
 Todas las medidas se dividen por el largo del TRONCO (del medio de los hombros al medio de las caderas),
 asi no dependen de que la persona este cerca o lejos de la camara, ni de si es adulta o pequena.
+
+Partes del archivo:
+    1. PUNTOS Y MEDIDAS   indices de MediaPipe y nombres de las 11 medidas
+    2. GEOMETRIA          funciones que miden distancias y angulos y arman las 11 medidas
+    3. CLASIFICADOR       ClasificadorVivo: predice cuadro a cuadro y vota para no parpadear
+    4. ETIQUETAS          conversion entre la clase (brazos, piernas...) y las dos preguntas si/no
 """
 import math
 
 import numpy as np
 
+# -------------------------------------------------------------------------- 1. PUNTOS Y MEDIDAS ---
 # Indices de MediaPipe Pose
 HOMBRO_I, HOMBRO_D = 11, 12
 CODO_I, CODO_D = 13, 14
@@ -40,6 +47,7 @@ NOMBRES = [
 ]
 
 
+# --------------------------------------------------------------------------------- 2. GEOMETRIA ---
 def _xy(puntos, i):
     """Coordenadas (x, y) del punto i de MediaPipe como decimales."""
     p = puntos[i]
@@ -99,6 +107,7 @@ def caracteristicas(puntos):
     ], dtype=float)
 
 
+# ---------------------------------------------------------------------- 3. CLASIFICADOR EN VIVO ---
 CLASE_IDX = {"ninguna": 0, "brazos": 1, "piernas": 2, "ambas": 3}   # numero que viaja por OSC en /posture
 
 
@@ -159,6 +168,7 @@ class ClasificadorVivo:
         return self.ms_total / self.n_pred if self.n_pred else 0.0
 
 
+# --------------------------------------------------------------------------------- 4. ETIQUETAS ---
 def etiquetas_desde_clase(clase):
     """'brazos' -> (1, 0); 'piernas' -> (0, 1); 'ambas' -> (1, 1); 'ninguna' -> (0, 0)."""
     return {"brazos": (1, 0), "piernas": (0, 1), "ambas": (1, 1), "ninguna": (0, 0)}[clase]

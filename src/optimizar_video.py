@@ -19,6 +19,8 @@ import cv2
 
 
 def main():
+    """Lee el video, aplica la rotación del celular, lo reduce al ancho pedido y guarda la copia liviana."""
+    # --- 1. opciones y ruta de salida ---
     ap = argparse.ArgumentParser(description="Crea una copia liviana de un video (menos pixeles, mismos FPS).")
     ap.add_argument("video", help="ruta del video original")
     ap.add_argument("--ancho", type=int, default=960, help="ancho de la copia en pixeles (por defecto 960)")
@@ -30,6 +32,7 @@ def main():
     base, _ = os.path.splitext(a.video)
     salida = a.salida or base + "_lite.mp4"
 
+    # --- 2. abrir el video y averiguar su rotación ---
     cap = cv2.VideoCapture(a.video)
     if not cap.isOpened():
         sys.exit("No pude abrir el video (revisa que sea MP4).")
@@ -46,6 +49,7 @@ def main():
     if giro and not auto:                                             # versiones viejas: girar a mano
         rotar = {90: cv2.ROTATE_90_CLOCKWISE, 180: cv2.ROTATE_180, 270: cv2.ROTATE_90_COUNTERCLOCKWISE}.get(giro)
 
+    # --- 3. leer, rotar, reducir y escribir cuadro a cuadro ---
     escritor, n = None, 0
     while True:
         ok, frame = cap.read()
@@ -61,6 +65,7 @@ def main():
         n += 1
         if n % 60 == 0:
             print(f"  {n}/{total or '?'} cuadros", end="\r")
+    # --- 4. cerrar y resumir ---
     cap.release()
     if escritor is not None:
         escritor.release()

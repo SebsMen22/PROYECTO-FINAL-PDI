@@ -1,10 +1,10 @@
 # ShadowDance
 
-**Tu cuerpo dibuja la luz.** Una cámara capta a una persona, un modelo de visión detecta su pose, un clasificador decide si abre los brazos, las piernas, ambos o ninguno, y TouchDesigner dibuja en una pantalla secundaria estelas de luz que reaccionan a esa postura, en tiempo real.
+**Tu cuerpo dibuja la luz.** Una cámara capta a una persona, MediaPipe detecta su pose, un clasificador decide si abre los brazos, las piernas, ambos o ninguno, y TouchDesigner dibuja en una pantalla secundaria estelas de luz que reaccionan a la postura, en tiempo real.
 
-Proyecto final de **Procesamiento Digital de Imágenes (PDI)** · Universidad Autónoma de Occidente, Cali · Profesor: Nicolás Llanos Neuta
-
+Proyecto final de **Procesamiento Digital de Imágenes** · Universidad Autónoma de Occidente, Cali · Profesor: Nicolás Llanos Neuta
 **Equipo:** Sebastián Meneses Molina · Juan Camilo Trujillo Vargas · Fanier Andrés Candelo Triana
+**Tema:** Análisis de la expresión humana en el arte y la cultura
 
 ![Cómo funciona ShadowDance](INTERFAZ/assets/como_funciona.png)
 
@@ -25,65 +25,53 @@ Anexos: [Cómo ejecutarlo](#cómo-ejecutarlo) · [Estructura del repositorio](#e
 
 ## 1. Descripción del proyecto
 
-**Problema.** Las instalaciones interactivas de luz suelen depender de sensores especiales o de controles manuales. Queremos que el cuerpo sea el control, usando solo una cámara web común.
+**Problemática.** Las instalaciones interactivas de luz suelen depender de sensores especiales o de controles manuales: son costosas y poco accesibles. ¿Puede el cuerpo ser el control usando solo una cámara web común?
 
-**Objetivo.** Construir un sistema interactivo en tiempo real que (a) detecte el cuerpo de una persona con visión por computador, (b) reconozca una postura sencilla (brazos abiertos, piernas abiertas) y (c) la convierta en una obra visual de luz, evaluando el sistema con datos reales y métricas cuantitativas.
+**Justificación.** El cuerpo es una forma de expresión humana central en la danza, el performance y el arte interactivo. Un sistema que lea la postura con una cámara común y la convierta en luz permite explorar esa expresión corporal de forma accesible, sin hardware especializado, y lleva a la práctica las técnicas del curso: detección, clasificación y procesamiento de imagen. Se inspira en *Text Rain* (Utterback y Achituv, 1999) y en las obras de referencia del laboratorio (*Data Choreographics*, *Illuminate*), instalaciones donde el cuerpo del visitante transforma la imagen.
 
-**Qué hace.**
+**Objetivo general.** Construir un sistema interactivo en tiempo real que detecte el cuerpo, reconozca la postura y la convierta en una obra visual de luz, evaluado con datos reales y métricas.
 
-- Detecta 12 articulaciones (hombros, codos, muñecas, caderas, rodillas, tobillos) con MediaPipe Pose.
-- Clasifica la postura en 4 clases: `ninguna`, `brazos`, `piernas`, `ambas`.
-- Manda los datos por OSC a TouchDesigner, que dibuja cintas de luz que se apagan solas. Cuando se abren los brazos la estela de brazos se vuelve dorada y más gruesa; con las piernas, naranja.
-- Tiene una interfaz gráfica para ejecutar con cámara, probar con videos grabados y ver el rendimiento en vivo.
-- Incluye una mejora de imagen (CLAHE) para funcionar con poca luz.
+**Objetivos específicos.**
+- Detectar 12 articulaciones con MediaPipe Pose.
+- Clasificar 4 posturas: `ninguna`, `brazos`, `piernas` o `ambas`.
+- Mantener la detección con poca luz mediante CLAHE.
+- Evaluar con datos reales y con usuarios de prueba.
+- Ofrecer una interfaz gráfica para ejecutar, probar y medir el sistema.
 
-**Inspiración.** *Text Rain* (Utterback y Achituv, 1999) y las obras de referencia del laboratorio (*Data Choreographics*, *Illuminate*): instalaciones donde el cuerpo del visitante transforma la imagen.
+**Solución propuesta.** Cámara → MediaPipe → clasificador de postura → OSC → TouchDesigner, con una interfaz gráfica local. Cuando se abren los brazos o las piernas, la estela de luz de esa parte del cuerpo cambia.
 
 ## 2. Arquitectura del sistema
 
 ```
-Cámara / video ─► (CLAHE opcional) ─► MediaPipe Pose ─► Características geométricas
-                                                            │
-                                    Clasificador (2 preguntas sí/no → 4 clases)
-                                                            │
-                         Suavizado + velocidad ─► OSC (UDP 127.0.0.1:7000) ─► TouchDesigner ─► pantalla secundaria
+Cámara/video ─► (CLAHE opcional) ─► MediaPipe Pose ─► Características ─► Clasificador (2 preguntas sí/no → 4 clases)
+                                  ─► Suavizado ─► OSC (UDP 127.0.0.1:7000) ─► TouchDesigner ─► pantalla secundaria
 ```
 
 | Etapa | Qué hace | Dónde |
 |---|---|---|
-| Captura | Cámara (DirectShow, 640×480) o video | `src/pose_osc.py`, `INTERFAZ/motor.py` |
-| Mejora de imagen | CLAHE sobre el canal L de LAB | `src/evaluar_sistema.py` (`ecualizar_clahe`) |
-| Pose | MediaPipe Pose Landmarker (`pose_landmarker_full.task`) | `src/pose_osc.py` |
-| Postura | 11 características normalizadas + clasificador | `src/postura.py` |
+| Captura | Cámara (640×480) o video | `src/pose_osc.py`, `INTERFAZ/motor.py` |
+| Mejora de imagen | CLAHE sobre el canal L de LAB | `src/evaluar_sistema.py`, `INTERFAZ/motor.py` |
+| Pose | MediaPipe Pose Landmarker | `src/pose_osc.py` |
+| Postura | 11 características + clasificador | `src/postura.py` |
 | Comunicación | OSC por UDP, puerto 7000 | `src/pose_osc.py` |
 | Visualización | Estelas de luz (Script TOP + Feedback) | `touchdesigner/` |
 | Interfaz | Servidor local + página web | `INTERFAZ/` |
 
-**Contrato OSC** (direcciones que recibe TouchDesigner):
+**OSC que recibe TouchDesigner:** `/{articulación}_x`, `_y`, `_s` (posición y velocidad de 12 articulaciones), `/detected`, `/posture` (0 ninguna · 1 brazos · 2 piernas · 3 ambas), `/arms_open`, `/legs_open`.
 
-| Dirección | Valor |
-|---|---|
-| `/{articulación}_x`, `/{articulación}_y` | posición suavizada, 0 a 1 (12 articulaciones) |
-| `/{articulación}_s` | velocidad de esa articulación |
-| `/detected` | 1 si hay persona, 0 si no |
-| `/posture` | 0 ninguna · 1 brazos · 2 piernas · 3 ambas |
-| `/arms_open`, `/legs_open` | 1 si los brazos / las piernas están abiertos |
+Red de nodos en TouchDesigner (OSC In → Filter → Script TOP → Feedback → Level → Blur → ventana de salida):
+
+![Red de TouchDesigner](docs/red_touchdesigner.png)
 
 ## 3. Metodología
 
-**Pose.** MediaPipe Pose Landmarker en modo video (sigue a la persona entre cuadros). Se usan 12 de los 33 puntos.
-
-**Características (11).** Todas se normalizan por el tamaño del torso para no depender de qué tan cerca está la persona: altura y distancia de muñecas, distancia de tobillos y de rodillas, ancho de hombros, ángulos de codo y rodilla, extensión del brazo, tobillos contra hombros, altura de tobillos.
-
-**Dos preguntas sí/no en vez de 4 clases directas.** Se entrenan dos clasificadores binarios (`abre_brazos`, `abre_piernas`) y se combinan en las 4 posturas. Así cada modelo resuelve algo más simple y la salida se puede usar por separado para colorear brazos y piernas.
-
-**Modelos comparados.** Regla de un umbral (línea base), regresión logística y random forest (300 árboles).
-
-**En vivo.** Se clasifica 1 de cada 3 cuadros y se vota por mayoría sobre las últimas 5 predicciones, para evitar parpadeos.
-
-**Procesamiento de imágenes (PDI).** Se probó **CLAHE** (ecualización adaptativa de histograma con límite de contraste: canal L de LAB, `clip=2.0`, bloques 8×8) antes de MediaPipe, oscureciendo artificialmente los videos de prueba para medir cuánta luz hace falta.
-
-**Evaluación.** Cuatro esquemas, de más fácil a más exigente, siempre separando personas o sesiones entre entrenamiento y prueba:
+1. **Pose.** MediaPipe Pose Landmarker en modo video; se usan 12 de los 33 puntos.
+2. **Características (11).** Distancias y ángulos normalizados por el tamaño del torso (muñecas, tobillos, rodillas, hombros, codos), para no depender de la distancia a la cámara.
+3. **Dos preguntas sí/no** (`abre_brazos`, `abre_piernas`) que se combinan en las 4 posturas: cada modelo resuelve algo más simple y permite colorear brazos y piernas por separado.
+4. **Modelos comparados.** Regla de un umbral (línea base), regresión logística y random forest.
+5. **En vivo.** Se clasifica 1 de cada 2 cuadros por consola y 1 de cada 3 en la interfaz (ajustable) y se vota por mayoría sobre las últimas 5 predicciones, para evitar parpadeos.
+6. **Procesamiento de imagen (PDI).** CLAHE (canal L de LAB, `clip=2.0`, bloques 8×8) antes de MediaPipe, probado oscureciendo los videos artificialmente.
+7. **Evaluación.** Cuatro esquemas (A–D) que siempre separan personas o sesiones entre entrenamiento y prueba:
 
 | Esquema | Entrena con | Prueba con |
 |---|---|---|
@@ -94,66 +82,67 @@ Cámara / video ─► (CLAHE opcional) ─► MediaPipe Pose ─► Caracterís
 
 ## 4. Implementación
 
-- **Lenguaje y librerías:** Python 3, MediaPipe, OpenCV, NumPy, pandas, scikit-learn, joblib, python-osc, Pillow.
-- **TouchDesigner 2025:** OSC In → Filter CHOP → Script TOP (`touchdesigner/td_segmentos.py`) → Composite + Feedback + Level + Blur → ventana de salida (Window COMP).
-- **Archivos principales:**
+Python 3, MediaPipe, OpenCV, NumPy, pandas, scikit-learn, joblib, python-osc · TouchDesigner 2025.
 
 | Archivo | Función |
 |---|---|
-| `src/pose_osc.py` | Programa en vivo por consola: cámara → pose → postura → OSC |
-| `src/postura.py` | Características y clasificador en vivo (`ClasificadorVivo`) |
-| `src/extraer_puntos.py` | Extrae los puntos de pose de las fotos del laboratorio a `data/keypoints.csv` |
-| `src/capturar_postura.py` | Captura cuadros etiquetados en vivo a un CSV (teclas 1 a 4) |
-| `src/entrenar_clasificador.py` | Entrena y evalúa (esquemas A a D); guarda el modelo con `--guardar` |
-| `src/evaluar_sistema.py` | Mide detección, tiempo por cuadro y FPS con y sin CLAHE y con distintas luces |
-| `src/grabar_video.py` | Graba los 4 videos de prueba de un usuario (quieto, brazos, piernas, ambas) |
-| `src/optimizar_video.py` | Crea una copia liviana de un video de celular (4K) para verlo fluido en la interfaz |
-| `src/diagnostico_rendimiento.py` | Mide cuánto tarda cada etapa de un cuadro en el computador donde se ejecuta |
-| `src/listar_camaras.py` | Muestra qué número tiene cada cámara conectada |
-| `src/osc_simulador.py` | Envía OSC inventado a TouchDesigner para probar la estela sin cámara |
-| `INTERFAZ/` | Interfaz gráfica (ver sección 6) |
-| `touchdesigner/` | Proyecto `.toe` y script de las estelas |
+| `src/pose_osc.py` | Programa en vivo: cámara → pose → postura → OSC |
+| `src/postura.py` | Características y clasificador en vivo |
+| `src/extraer_puntos.py` | Extrae los puntos de pose de las fotos a `data/keypoints.csv` |
+| `src/capturar_postura.py` | Captura cuadros etiquetados en vivo |
+| `src/entrenar_clasificador.py` | Entrena y evalúa (esquemas A–D) |
+| `src/evaluar_sistema.py` | Mide detección, tiempo por cuadro y FPS (con/sin CLAHE y con poca luz) |
+| `src/grabar_video.py`, `src/medir_en_vivo.py` | Pruebas con usuarios (videos o medición en vivo) |
+| `src/diagnostico_rendimiento.py` | Mide cuánto tarda cada etapa en un computador |
+| `INTERFAZ/` | Interfaz gráfica (servidor local + web) |
+| `touchdesigner/` | Proyecto `.toe` y script de las estelas (`td_segmentos.py`) |
 
 ## 5. Datos
 
 | Conjunto | Contenido | Archivo |
 |---|---|---|
-| Fotos del laboratorio | 159 fotos de **adultos** usadas para entrenar (puntos de pose ya extraídos, sin las imágenes) | `data/keypoints.csv` |
-| Capturas en vivo | 3 900 cuadros etiquetados de 2 personas con las 4 posturas | `data/captura_v1.csv` |
-| Videos de prueba | Dos videos del laboratorio (brazos, piernas) más videos propios | no se suben |
+| Fotos del laboratorio | 159 fotos únicas de adultos: 69 de brazos, 69 de piernas y 21 de ambas (180 registros, porque las 21 de «ambas» aparecen en las dos categorías del laboratorio). Solo se publican los puntos de pose | `data/keypoints.csv` |
+| Capturas en vivo | 3 900 cuadros en 29 sesiones: 1 472 brazos, 838 piernas, 833 ambas, 757 ninguna | `data/captura_v1.csv` |
+
+![Distribución de los datos y ejemplos de pose](docs/datos_distribucion.png)
 
 Notas honestas sobre los datos:
-
-- Las etiquetas de las fotos se asignaron según la categoría del laboratorio (brazos, piernas, ambas); no se etiquetó manualmente foto por foto.
-- Las fotos no tienen ejemplos de la clase `ninguna`; esa clase solo aparece en las capturas en vivo.
-- Las fotos originales, los videos y los modelos pesados **no se suben al repositorio** por privacidad (hay personas, entre ellas un menor) y por tamaño. Solo se publican los puntos de pose, que no permiten reconstruir a nadie.
+- Las etiquetas de las fotos vienen de la categoría del laboratorio, no se etiquetó foto por foto.
+- Las fotos no tienen ejemplos de `ninguna`; esa clase solo aparece en las capturas en vivo.
+- Fotos originales, videos y modelos pesados **no se suben** por privacidad y tamaño; solo los puntos de pose, que no permiten reconstruir a nadie. Los videos de prueba se pueden solicitar al equipo.
 
 ## 6. Interfaz gráfica (GUI)
-
-Interfaz local que se abre en una ventana propia (Edge en modo aplicación). Funciona con la biblioteca estándar de Python y una página web.
 
 ```
 python INTERFAZ\iniciar.py
 ```
 
+Interfaz local que abre una ventana propia (Edge en modo aplicación). Funciona con la biblioteca estándar de Python y una página web.
+
 | Pantalla | Para qué sirve |
 |---|---|
 | **Inicio** | Menú principal con el título, los creadores y la materia |
-| **Ejecutar** | Cámara con el esqueleto de brazos y piernas, FPS, % de cuerpo visible, % de brazos y piernas abiertos, tiempo por cuadro y la postura detectada (BRAZOS / PIERNAS / AMBAS / NINGUNA). Interruptores para encender o apagar la detección y la mejora de luz (CLAHE) |
+| **Ejecutar** | Cámara con el esqueleto de brazos y piernas, FPS, % de cuerpo visible, % de brazos y piernas abiertos, tiempo por cuadro y postura detectada (BRAZOS / PIERNAS / AMBAS / NINGUNA); interruptores de detección y de mejora de luz (CLAHE) |
 | **Pruebas** | Reproduce videos grabados con la detección encima (pausa, reiniciar, repetir) y muestra las mediciones guardadas en `results/` |
-| **Cómo funciona** | El diagrama de arquitectura |
+| **Cómo funciona** | Diagrama de la arquitectura |
 
-> **Captura de pantalla:** `docs/gui_ejecutar.png` *(agregar)*
+**Instrucciones de uso**
+1. Abre `touchdesigner/shadowdance3.toe` y pulsa **F1** para la ventana de salida (la pantalla secundaria); **Esc** la cierra. La interfaz no abre TouchDesigner.
+2. Ejecuta `python INTERFAZ\iniciar.py`.
+3. En **Ejecutar** pulsa *Iniciar ShadowDance* (cámara) o, en **Pruebas**, elige un video y *Reproducir*.
+4. Si el computador no alcanza a detectar cada cuadro, la interfaz activa sola un *modo adaptativo* (detecta 1 de cada 2 cuadros y reutiliza la última pose).
 
-**Rendimiento:** si el computador no alcanza a detectar en cada cuadro, la interfaz activa sola un *modo adaptativo* (detecta 1 de cada 2 cuadros y reutiliza la última pose), de modo que el video y el dibujo siguen fluidos. Los videos de prueba se guardan en `INTERFAZ/videos/usuarios/` (no se suben a GitHub).
-
-La interfaz **no abre TouchDesigner**: se abre `touchdesigner/shadowdance3.toe` a mano antes de iniciar y, en TouchDesigner, **F1** abre la ventana negra de salida (la pantalla secundaria) y **Esc** la cierra. Más detalles en `INTERFAZ/LEEME.md`.
+| Inicio | Ejecutar |
+|---|---|
+| ![Inicio](docs/gui_inicio.png) | ![Ejecutar](docs/gui_ejecutar.png) |
+| **Pruebas con videos** | **Cómo funciona** |
+| ![Pruebas](docs/gui_pruebas.png) | ![Cómo funciona](docs/gui_como_funciona.png) |
 
 ## 7. Resultados
 
 ### 7.1 Clasificador de postura
 
-Acierto promedio (ponderado por número de ejemplos) de las 4 posturas completas, que es lo más exigente. El azar sería 25 %.
+Acierto de las 4 posturas a la vez, ponderado por número de ejemplos (el azar sería 25 %):
 
 | Esquema | Regla (1 umbral) | Regresión logística | Random forest |
 |---|---|---|---|
@@ -164,17 +153,14 @@ Acierto promedio (ponderado por número de ejemplos) de las 4 posturas completas
 
 ![Acierto de las 4 posturas](poster/figuras/fig_acierto_4clases.png)
 
-Cada pregunta por separado acierta más (hasta ~75 % en `abre_brazos` y `abre_piernas`); las gráficas están en `poster/figuras/fig_acierto_brazos.png` y `fig_acierto_piernas.png`, y las tablas completas con F1 en `results/clasificador_resumen.md`. Las matrices de confusión están en `results/matriz_confusion_*.png`.
+Por pregunta (brazos / piernas) el acierto llega a ~75 %. Tablas completas con F1 en `results/clasificador_resumen.md` y matrices de confusión en `results/matriz_confusion_*.png`.
 
-**Qué enseña la comparación:**
-
-- Entrenar solo con fotos y probar en vivo (esquema C) baja mucho el acierto: las fotos y la cámara web no se parecen. Agregar capturas en vivo al entrenamiento (esquema D) sube el acierto de 48 % a 52–54 % con modelos más estables.
-- La regla de un umbral sirve como línea base, pero los modelos aprendidos la superan en casi todos los esquemas.
-- Las características más importantes para `abre_brazos` son la **altura de las muñecas** (máxima y media) y su **distancia**.
+- Entrenar solo con fotos y probar en vivo (esquema C) baja mucho el acierto: las fotos y la cámara web no se parecen. Añadir capturas en vivo (esquema D) sube el acierto de 48 % a 52–54 % con modelos más estables.
+- Las características más importantes para `abre_brazos` son la altura y la distancia de las muñecas.
 
 ### 7.2 Imagen y velocidad (PDI)
 
-Porcentaje de cuadros con persona detectada, promedio de los dos videos del laboratorio (300 cuadros cada uno), oscureciendo el video de forma artificial:
+Porcentaje de cuadros con persona detectada, oscureciendo artificialmente los dos videos del laboratorio (300 cuadros cada uno):
 
 | Brillo del video | Sin mejora | Con CLAHE |
 |---|---|---|
@@ -185,50 +171,47 @@ Porcentaje de cuadros con persona detectada, promedio de los dos videos del labo
 
 ![CLAHE y poca luz](poster/figuras/fig_clahe_oscuridad.png)
 
-- Con muy poca luz, MediaPipe deja de detectar a la persona; **CLAHE recupera la detección** (de 0 % a 83 % con el 4 % del brillo; en ese caso extremo, el video de brazos solo llega a 66 % y el de piernas a 100 %).
-- **Costo de CLAHE:** unos 3 ms por cuadro (≈22.5 ms sin CLAHE frente a ≈25.5 ms con CLAHE), así que el sistema se mantiene en tiempo real: ≈44 FPS posibles sin CLAHE y ≈40 con CLAHE.
-- **Velocidad en vivo:** entre **27 y 30 FPS** con la cámara a 640×480 (la cámara limita a 30). Con poca luz la cámara web baja sola sus cuadros por segundo. Los números de cada condición están en `results/sistema_metricas.csv`, y `python src\diagnostico_rendimiento.py` mide las etapas en cualquier computador.
+- Con muy poca luz MediaPipe deja de detectar; **CLAHE recupera la detección** (de 0 % a 83 % con el 4 % del brillo).
+- **Costo de CLAHE:** unos 3 ms por cuadro (≈22.5 ms sin CLAHE frente a ≈25.5 ms con CLAHE), así que el sistema se mantiene en tiempo real.
+- **Velocidad en vivo: 27–30 FPS** con la cámara a 640×480 (la cámara limita a 30). Mediciones en `results/sistema_metricas.csv`.
 
-### 7.3 Evidencia visual
+### 7.3 Ejemplos de funcionamiento
 
-- Interfaz en funcionamiento: sección 6.
-- Estelas de luz en TouchDesigner, con los brazos y las piernas abiertos: *(agregar capturas en `docs/`)*.
-- Videos con el esqueleto detectado: se generan desde la pestaña **Pruebas**.
+Estelas de luz generadas por TouchDesigner a partir de la postura detectada:
+
+![Estelas de luz](docs/estelas_touchdesigner.png)
+
+La interfaz en ejecución se muestra en la sección 6, y el funcionamiento completo (cámara, interfaz y estelas) está en el video demostrativo.
 
 ### 7.4 Pruebas con usuarios
 
-Piloto con adultos que prueban el prototipo. Cada uno graba 4 videos de 10 s con `python src\grabar_video.py` (quieto, brazos abiertos, piernas abiertas, ambas) y se miden con `python src\evaluar_sistema.py --videos ...`. Los resultados quedan en `results/usuarios/`.
+Piloto con una persona nueva: se grabaron 4 videos de 10 s (quieto, brazos, piernas, ambas) con `python src\grabar_video.py` y se midieron con `python src\evaluar_sistema.py --videos ...`. Resultados en `results/usuarios/`. Porcentaje de cuadros con la postura correcta, sin mejora de imagen (con CLAHE: 6 %, 69 %, 71 % y 8 %):
 
 | Usuario | Quieto | Brazos | Piernas | Ambas |
 |---|---|---|---|---|
-| Usuario 1 | [__ %] | [__ %] | [__ %] | [__ %] |
-| Usuario 2 | [__ %] | [__ %] | [__ %] | [__ %] |
-| Usuario 3 | [__ %] | [__ %] | [__ %] | [__ %] |
+| Usuario 1 | 0 % | 52 % | 71 % | 22 % |
 
-*(porcentaje de cuadros con la postura correcta; completar con `results/usuarios/sistema_resumen.md`)*
+La detección de la persona fue del 100 % en todos los videos. Un segundo usuario se probó en vivo con la interfaz y TouchDesigner (ver video). Con personas nuevas el clasificador acierta menos que en el entrenamiento, sobre todo en «quieto» y «ambas»: se entrenó con muy pocas personas.
 
 ## 8. Conclusiones
 
 **Logros**
-
 - Sistema completo y funcional en tiempo real: cámara → pose → postura → OSC → luz, con interfaz gráfica.
-- CLAHE sostiene la detección cuando casi no hay luz, que es lo más común en una instalación.
+- CLAHE sostiene la detección cuando casi no hay luz, algo común en una instalación.
 - Evaluación con cuatro esquemas que separan personas y sesiones, sin mezclar a la misma persona en entrenamiento y prueba.
-- La postura se refleja en la estela: color y grosor cambian al abrir brazos o piernas.
+- La postura se refleja en la estela de luz.
 
 **Limitaciones**
-
 - El acierto exacto de las 4 posturas está entre 48 % y 65 % según el esquema; por pregunta llega a ~75 %. Es suficiente para un efecto visual, no para un uso crítico.
-- Muy pocas personas: 2 en las capturas en vivo y unas pocas en las fotos, con fondos y luces parecidos.
+- Muy pocas personas y condiciones parecidas; con un usuario nuevo, «quieto» y «ambas» se confunden.
 - Etiquetas de las fotos asumidas por la categoría del laboratorio, no verificadas una a una; sin ejemplos de `ninguna` en las fotos.
-- Las mediciones de detección con poca luz usan solo dos videos.
+- La detección con poca luz se midió con solo dos videos.
 
-**Mejoras futuras**
-
+**Oportunidades de mejora**
 - Más personas, fondos, ropa y condiciones de luz, con etiquetado verificado.
 - Modelos que usen secuencias de cuadros (movimiento) en vez de un cuadro aislado.
-- Probar el modelo de pose más grande (*heavy*) y medir el costo en FPS.
-- Nuevas posturas y movimientos (saltos, giros) y más efectos visuales.
+- Probar el modelo de pose *heavy* de MediaPipe y medir el costo en FPS.
+- Calibración rápida por usuario, nuevas posturas y más efectos visuales.
 
 ---
 
@@ -242,23 +225,21 @@ python -m venv .venv
 pip install -r requirements.txt -r requirements-ml.txt
 ```
 
-1. **Modelo de pose.** Descarga `pose_landmarker_full.task` de [MediaPipe](https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task) y guárdalo en `src/` (no se sube al repositorio).
-2. **Entrenar el clasificador** (genera `modelos/postura.joblib`, que no se sube):
+1. **Modelo de pose.** Descarga [`pose_landmarker_full.task`](https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task) y guárdalo en `src/`.
+2. **Entrenar el clasificador** (genera `modelos/postura.joblib`):
    ```
    python src\entrenar_clasificador.py --captura data\captura_v1.csv --guardar
    ```
-3. **Abrir TouchDesigner** con `touchdesigner/shadowdance3.toe` y pulsar **F1** para la ventana de salida.
-4. **Ejecutar** con la interfaz:
+3. **Abrir TouchDesigner** con `touchdesigner/shadowdance3.toe` y pulsar **F1**.
+4. **Ejecutar** con la interfaz o por consola:
    ```
    python INTERFAZ\iniciar.py
-   ```
-   o por consola:
-   ```
    python src\pose_osc.py --camara 1 --sin-mjpg --ancho 640 --alto 480
    ```
+   (`python src\listar_camaras.py` muestra qué número tiene cada cámara.)
 5. **Medir el sistema** con videos propios:
    ```
-   python src\evaluar_sistema.py --videos clips\quieto.mp4:ninguna lab_deteccion\video_brazos.mp4 lab_deteccion\video_piernas.mp4
+   python src\evaluar_sistema.py --videos clips\quieto.mp4:ninguna clips\brazos.mp4:brazos
    ```
 6. **Capturar nuevas posturas** (teclas 1 brazos, 2 piernas, 3 ambas, 4 ninguna):
    ```
@@ -269,14 +250,15 @@ pip install -r requirements.txt -r requirements-ml.txt
 
 ```
 INTERFAZ/        interfaz gráfica (servidor local + web) y diagrama "cómo funciona"
-src/             programas de visión, clasificador, captura y evaluación
+src/             visión, clasificador, captura y evaluación
 touchdesigner/   proyecto .toe y script de las estelas
 data/            puntos de pose de las fotos y capturas en vivo (sin imágenes)
 results/         métricas, resúmenes y matrices de confusión
 poster/          póster (SVG editable) y figuras de resultados
+docs/            capturas de la interfaz, de TouchDesigner y figura de los datos
 ```
 
-No se suben: fotos y videos del laboratorio, modelos pesados (`*.pth`, `*.joblib`), `pose_landmarker_full.task`, ni videos de prueba (`*.mp4`).
+No se suben fotos, videos del laboratorio ni de usuarios, modelos pesados ni `pose_landmarker_full.task`.
 
 ## Referencias
 
@@ -285,5 +267,5 @@ No se suben: fotos y videos del laboratorio, modelos pesados (`*.pth`, `*.joblib
 - Zuiderveld, K. (1994). *Contrast Limited Adaptive Histogram Equalization.* En *Graphics Gems IV*, Academic Press.
 - Utterback, C. y Achituv, R. (1999). *Text Rain* (instalación interactiva).
 - Wright, M. y Freed, A. (1997). *Open SoundControl: A New Protocol for Communicating with Sound Synthesizers.* ICMC.
-- Obras de referencia del laboratorio: *Data Choreographics*, *Illuminate* (completar autor y año con la ficha del curso).
+- Obras de referencia del laboratorio: *Data Choreographics* e *Illuminate*.
 - Scikit-learn, OpenCV, python-osc y TouchDesigner (Derivative).

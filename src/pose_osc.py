@@ -11,13 +11,18 @@ Ejemplos:
 Salir: tecla q en la ventana de vista previa.
 La ventana muestra la estela de colores sobre la cámara (se desactiva con --sin-estela).
 Al salir imprime un resumen (FPS promedio y % de cuadros con persona): sirve como evidencia de evaluación.
+
+Partes del archivo:
+    1. CONFIGURACIÓN         constantes ajustables (suavizado, umbrales, colores, articulaciones)
+    2. ESTELA                dibujo de la estela en la ventana de vista previa
+    3. FUNCIONES DE APOYO    buscar modelos, abrir la cámara/video, suavizar y calcular velocidad
+    4. PROGRAMA PRINCIPAL    detectar -> clasificar -> enviar OSC -> mostrar (pasos numerados 0 a 8)
 """
 import argparse
 import csv
 import os
-import time
-
 import sys
+import time
 
 import cv2
 import mediapipe as mp
@@ -72,6 +77,7 @@ BACKENDS = {
 _AQUI = os.path.dirname(os.path.abspath(__file__))
 
 
+# ----------------------------------------------------------------- 2. ESTELA DE LA VISTA PREVIA ---
 class Estela:
     """
     Dibuja en la ventana de vista previa la estela de colores de cada articulación que se mueve.
@@ -83,7 +89,7 @@ class Estela:
     """
 
     def __init__(self, ancho, alto):
-        """Crea el lienzo negro del tamano de la imagen."""
+        """Crea el lienzo negro del tamaño de la imagen."""
         self.lienzo = np.zeros((alto, ancho, 3), np.float32)  # decimales: así el apagado no se queda trabado
         self.anterior = {}                                    # última posición dibujada de cada articulación
 
@@ -109,6 +115,7 @@ class Estela:
         return cv2.add(imagen, np.clip(self.lienzo, 0, 255).astype(np.uint8))
 
 
+# ------------------------------------------------------------------------ 3. FUNCIONES DE APOYO ---
 def buscar_modelo():
     """Busca el archivo del modelo junto a este script y, si no está, en la carpeta actual."""
     for ruta in (os.path.join(_AQUI, MODEL_NAME), MODEL_NAME):
@@ -175,8 +182,9 @@ def suavizar_y_velocidad(prev, nombre, x, y, dt, alpha):
     return x, y, vel
 
 
+# ------------------------------------------------------------------------ 4. PROGRAMA PRINCIPAL ---
 def main():
-    """Programa de siempre: abre la fuente, detecta la pose, clasifica la postura y envia todo por OSC."""
+    """Programa principal: abre la fuente, detecta la pose, clasifica la postura y envía todo por OSC."""
     parser = argparse.ArgumentParser(description="Shadow Dance: cámara -> pose -> OSC")
     parser.add_argument("--camara", type=int, default=0, help="número de la cámara (usa listar_camaras.py)")
     parser.add_argument("--video", default=None, help="ruta de un video; si se da, se ignora la cámara")

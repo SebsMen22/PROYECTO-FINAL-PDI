@@ -23,6 +23,7 @@ AQUI = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, AQUI)
 import pose_osc as P          # reutiliza abrir_fuente: mismo formato de camara que el sistema en vivo
 
+# ------------------------------------------------------------------------- 1. POSTURAS A GRABAR ---
 # (nombre del archivo, texto en pantalla, clase que espera evaluar_sistema.py)
 POSTURAS = [
     ("quieto", "DE PIE, BRAZOS Y PIERNAS CERRADOS", "ninguna"),
@@ -32,13 +33,16 @@ POSTURAS = [
 ]
 
 
+# ------------------------------------------------------------------------ 2. FUNCIONES DE APOYO ---
 def texto(img, s, y, tam=0.8, color=(255, 255, 255), grosor=2):
     """Texto con sombra negra para que se lea sobre cualquier fondo."""
     cv2.putText(img, s, (14, y), cv2.FONT_HERSHEY_SIMPLEX, tam, (0, 0, 0), grosor + 3, cv2.LINE_AA)
     cv2.putText(img, s, (14, y), cv2.FONT_HERSHEY_SIMPLEX, tam, color, grosor, cv2.LINE_AA)
 
 
+# ------------------------------------------------------------------------ 3. PROGRAMA PRINCIPAL ---
 def main():
+    """Pide cada postura al usuario, cuenta 3 s y graba un video corto de cada una con la cámara."""
     ap = argparse.ArgumentParser(description="Graba los 4 videos de prueba de un usuario.")
     ap.add_argument("--usuario", required=True, help="nombre corto del usuario (sin espacios), ej. ana")
     ap.add_argument("--camara", type=int, default=0)

@@ -8,9 +8,11 @@ import time
 
 from pythonosc.udp_client import SimpleUDPClient
 
+# -------------------------------------------------------------------------------- configuración ---
 OSC_IP, OSC_PORT = "127.0.0.1", 7000
 NOMBRES = ["lw", "rw", "le", "re", "la", "ra", "lk", "rk", "ls", "rs", "lh", "rh"]  # las mismas 12 articulaciones que pose_osc.py
 
+# ----------------------------------------------------------- envío continuo (Ctrl+C para parar) ---
 client = SimpleUDPClient(OSC_IP, OSC_PORT)
 t0 = time.time()
 print(f"Enviando OSC simulado a {OSC_IP}:{OSC_PORT} ... (Ctrl+C para salir)")

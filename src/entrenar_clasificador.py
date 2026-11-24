@@ -34,10 +34,12 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from postura import NOMBRES, caracteristicas, clase_desde_etiquetas, etiquetas_desde_clase  # noqa: E402
 
+# ----------------------------------------------------------------------------- 1. CONFIGURACIÓN ---
 CLASES = ["brazos", "piernas", "ambas", "ninguna"]
 OBJETIVOS = ("abre_brazos", "abre_piernas")
 
 
+# --------------------------------------------------------------------------- 2. MODELOS Y DATOS ---
 def fabricas_de_modelos():
     """{nombre: funcion que crea un modelo nuevo}. Son funciones para entrenar uno limpio en cada pliegue."""
     from sklearn.ensemble import RandomForestClassifier
@@ -100,6 +102,7 @@ def cargar_capturas(rutas):
     return df
 
 
+# --------------------------------- 3. ENTRENAR Y PREDECIR (validación cruzada y entre personas) ---
 def predecir_cv(fabrica, X, Y, grupos, pliegues=5):
     """Validacion cruzada por grupos: devuelve la prediccion de cada foto hecha por un modelo que no la vio."""
     from sklearn.model_selection import GroupKFold
@@ -127,6 +130,7 @@ def predecir_entre(fabrica, X_ent, Y_ent, X_prueba):
     return pred
 
 
+# ---------------------------------------------------------- 4. MÉTRICAS Y MATRICES DE CONFUSIÓN ---
 def metricas(esquema, modelo, Y, pred, idx):
     """Filas de resultados: accuracy y F1 de cada pregunta, y el acierto cuando las dos van bien a la vez."""
     from sklearn.metrics import accuracy_score, f1_score
@@ -174,6 +178,7 @@ def dibujar_matrices(resultados, esquema, ruta):
     plt.close(fig)
 
 
+# ------------------------------------------------------------------------ 5. PROGRAMA PRINCIPAL ---
 def main():
     """Evalua los tres modelos (esquemas A, B, C y D), guarda tablas y matrices y, con --guardar, el modelo final."""
     ap = argparse.ArgumentParser(description="Entrena y evalua el clasificador de postura")

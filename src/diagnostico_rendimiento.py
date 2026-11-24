@@ -5,7 +5,7 @@ Etapas: leer el cuadro, reducirlo, MediaPipe (deteccion), clasificador, OSC, dib
 Uso (desde la carpeta del proyecto, con el entorno activado):
     python src\\diagnostico_rendimiento.py --video INTERFAZ\\videos\\usuarios\\Mariana_ambas.mp4
     python src\\diagnostico_rendimiento.py --camara 1
-Recomendacion: correrlo 2 veces, una con TouchDesigner y Edge cerrados y otra con todo abierto, para ver
+Recomendacion: correrlo 2 veces, una con TouchDesigner cerrado y otra con todo abierto, para ver
 cuanto te quita la competencia por el procesador.
 """
 import argparse
@@ -26,6 +26,7 @@ import motor as M                          # noqa: E402
 
 
 def main():
+    """Mide, etapa por etapa, cuánto tarda procesar un cuadro y dice cuál es la que más frena."""
     # --- 1. opciones: video o camara, y cuantos cuadros medir ---
     ap = argparse.ArgumentParser(description="Mide cuanto tarda cada etapa del procesamiento de un cuadro.")
     ap.add_argument("--video", default=None)

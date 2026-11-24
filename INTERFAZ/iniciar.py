@@ -17,12 +17,14 @@ import threading
 import time
 import webbrowser
 
+# ---------------------------------------------------------- 1. RUTAS E IMPORTACIÓN DEL SERVIDOR ---
 AQUI = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, AQUI)
 
 from servidor import crear_servidor  # noqa: E402
 
 
+# ------------------------------------------------------------------------ 2. FUNCIONES DE APOYO ---
 def cargar_config():
     """Lee INTERFAZ\\config.json (puerto, camara, resolucion, carpetas de videos)."""
     ruta = os.path.join(AQUI, "config.json")
@@ -45,6 +47,7 @@ def abrir_ventana(url):
     webbrowser.open(url)
 
 
+# ------------------------------------------------------------------------ 3. PROGRAMA PRINCIPAL ---
 def main():
     """Levanta el servidor, abre la ventana y espera hasta que se cierre (boton Salir, Ctrl+C o ventana cerrada)."""
     cfg = cargar_config()
