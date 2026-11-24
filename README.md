@@ -27,11 +27,11 @@ Anexos: [Instalación y ejecución](#instalación-y-ejecución) · [Estructura d
 
 ## 1. Descripción del proyecto
 
-**Problemática.** Las instalaciones interactivas de luz suelen depender de sensores especiales o de controles manuales: son costosas y poco accesibles. ¿Puede el cuerpo ser el control usando solo una cámara web común?
+**Problemática.** En la danza, y sobre todo en un solo, el cuerpo del bailarín es el medio de expresión: cada gesto, cada apertura de brazos o de piernas y cada desplazamiento responde a la música y al espacio del escenario. Pero esa expresión es efímera: el movimiento ocurre y desaparece, y el público solo percibe la parte que alcanza a ver desde su lugar, sin poder apreciar el recorrido ni la amplitud de lo que el cuerpo acaba de decir. Las instalaciones interactivas que podrían amplificarla suelen depender de sensores especiales o de trajes de captura: costosos, poco accesibles y a veces invasivos para quien baila. La pregunta es: **¿puede una cámara web común leer la expresión corporal de un bailarín y amplificarla en tiempo real, sin sensores sobre su cuerpo?**
 
-**Justificación.** El cuerpo es una forma de expresión humana central en la danza, el performance y el arte interactivo. Un sistema que lea la postura con una cámara común y la convierta en luz permite explorar esa expresión corporal de forma accesible, sin hardware especializado, y lleva a la práctica las técnicas del curso: detección, clasificación y procesamiento de imagen. Se inspira en *Text Rain* (Utterback y Achituv, 1999) y en las obras de referencia del laboratorio (*Data Choreographics*, *Illuminate*), instalaciones donde el cuerpo del visitante transforma la imagen.
+**Justificación.** El movimiento corporal es un lenguaje: con él se expresan emociones e intenciones, y en el arte y la cultura es una de las formas de expresión humana más antiguas. Analizarlo con visión computacional (dónde están los brazos y las piernas, qué tan rápido se mueven, cuándo el cuerpo se abre) permite convertir esa expresión en información que se puede visualizar. ShadowDance propone **amplificar la expresión del baile con una estela de luz que sigue los movimientos**: lo que el bailarín dibuja con su cuerpo queda como una huella luminosa que el público puede ver, y los momentos de mayor apertura (brazos o piernas abiertos) se destacan con otro color y mayor grosor. Todo con una cámara común y sin hardware especializado, lo que lo hace accesible para artistas y escuelas, y lleva a la práctica las técnicas del curso: detección, clasificación y procesamiento de imagen. Se inspira en *Text Rain* (Utterback y Achituv, 1999) y en las obras de referencia del laboratorio (*Data Choreographics*, *Illuminate*), instalaciones donde el cuerpo del visitante transforma la imagen.
 
-**Objetivo general.** Construir un sistema interactivo en tiempo real que detecte el cuerpo, reconozca la postura y la convierta en una obra visual de luz, evaluado con datos reales y métricas.
+**Objetivo general.** Construir un sistema interactivo en tiempo real que analice el movimiento corporal de una persona, reconozca su postura y lo amplifique como una obra visual de luz, evaluado con datos reales y métricas.
 
 **Objetivos específicos.**
 - Detectar 12 articulaciones con MediaPipe Pose.
@@ -40,7 +40,7 @@ Anexos: [Instalación y ejecución](#instalación-y-ejecución) · [Estructura d
 - Evaluar con datos reales y con usuarios de prueba.
 - Ofrecer una interfaz gráfica para ejecutar, probar y medir el sistema.
 
-**Solución propuesta.** Cámara → MediaPipe → clasificador de postura → OSC → TouchDesigner, con una interfaz gráfica local. Cuando se abren los brazos o las piernas, la estela de luz de esa parte del cuerpo cambia.
+**Solución propuesta.** Cámara → MediaPipe → clasificador de postura → OSC → TouchDesigner, con una interfaz gráfica local. Una estela de luz sigue cada brazo y cada pierna mientras se mueven; cuando se abren los brazos o las piernas, la estela de esa parte del cuerpo cambia de color y se hace más gruesa. El sistema responde al **cuerpo** del bailarín, no a la música: es el bailarín quien interpreta la música y el sistema amplifica lo que su cuerpo expresa.
 
 ## 2. Arquitectura del sistema
 
