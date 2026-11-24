@@ -8,6 +8,8 @@ Proyecto final de **Procesamiento Digital de Imágenes** · Universidad Autónom
 
 ![Cómo funciona ShadowDance](INTERFAZ/assets/como_funciona.png)
 
+Este `README.md` es el documento principal del repositorio: explica **qué hace** el proyecto y **cómo funciona** (secciones 1 a 8) y da las instrucciones para **instalarlo y ejecutarlo** ([Instalación y ejecución](#instalación-y-ejecución)). Si solo quieres correrlo, ve directo a esa sección.
+
 ## Contenido
 
 1. [Descripción del proyecto](#1-descripción-del-proyecto)
@@ -19,7 +21,7 @@ Proyecto final de **Procesamiento Digital de Imágenes** · Universidad Autónom
 7. [Resultados](#7-resultados)
 8. [Conclusiones](#8-conclusiones)
 
-Anexos: [Cómo ejecutarlo](#cómo-ejecutarlo) · [Estructura del repositorio](#estructura-del-repositorio) · [Referencias](#referencias)
+Anexos: [Instalación y ejecución](#instalación-y-ejecución) · [Estructura del repositorio](#estructura-del-repositorio) · [Referencias](#referencias)
 
 ---
 
@@ -215,36 +217,67 @@ La detección de la persona fue del 100 % en todos los videos. Un segundo usuari
 
 ---
 
-## Cómo ejecutarlo
+## Instalación y ejecución
 
-Requisitos: Windows, Python 3.10 o superior, una cámara web y TouchDesigner (para la parte visual).
+### Requisitos
+- **Sistema:** Windows 10 u 11 (la cámara usa el controlador DirectShow y la interfaz abre Edge).
+- **Python 3.10 o superior** y `git`.
+- **Una cámara web.** El equipo usó una PS3 Eye; sirve cualquier webcam USB.
+- **TouchDesigner** (versión 2025) para la parte visual. Sin él, la interfaz y la consola funcionan igual y muestran el esqueleto y la postura.
 
+### 1. Descargar el proyecto e instalar las dependencias
 ```
+git clone https://github.com/SebsMen22/PROYECTO-FINAL-PDI.git
+cd PROYECTO-FINAL-PDI
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt -r requirements-ml.txt
 ```
+`requirements.txt` instala MediaPipe (que ya trae OpenCV y NumPy) y python-osc; `requirements-ml.txt` instala scikit-learn, pandas, matplotlib y joblib, necesarias para entrenar y evaluar.
 
-1. **Modelo de pose.** Descarga [`pose_landmarker_full.task`](https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task) y guárdalo en `src/`.
-2. **Entrenar el clasificador** (genera `modelos/postura.joblib`):
-   ```
-   python src\entrenar_clasificador.py --captura data\captura_v1.csv --guardar
-   ```
-3. **Abrir TouchDesigner** con `touchdesigner/shadowdance3.toe` y pulsar **F1**.
-4. **Ejecutar** con la interfaz o por consola:
-   ```
-   python INTERFAZ\iniciar.py
-   python src\pose_osc.py --camara 1 --sin-mjpg --ancho 640 --alto 480
-   ```
-   (`python src\listar_camaras.py` muestra qué número tiene cada cámara.)
-5. **Medir el sistema** con videos propios:
-   ```
-   python src\evaluar_sistema.py --videos clips\quieto.mp4:ninguna clips\brazos.mp4:brazos
-   ```
-6. **Capturar nuevas posturas** (teclas 1 brazos, 2 piernas, 3 ambas, 4 ninguna):
-   ```
-   python src\capturar_postura.py --camara 1 --sin-mjpg --ancho 640 --alto 480 --sesion adulto3
-   ```
+### 2. Descargar el modelo de pose
+Descarga [`pose_landmarker_full.task`](https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/latest/pose_landmarker_full.task) y guárdalo en la carpeta `src/`. Es el modelo preentrenado de Google; no se sube al repositorio por su tamaño.
+
+### 3. Entrenar el clasificador de postura
+El modelo entrenado (`modelos/postura.joblib`) no se sube al repositorio; se genera con:
+```
+python src\entrenar_clasificador.py --captura data\captura_v1.csv --guardar
+```
+Esto también imprime las métricas de los esquemas A–D y guarda las matrices de confusión en `results/`.
+
+### 4. Abrir TouchDesigner
+Abre `touchdesigner/shadowdance3.toe` y pulsa **F1** para abrir la ventana de salida (la pantalla secundaria); **Esc** la cierra. Hazlo **antes** de iniciar el sistema.
+
+### 5. Ejecutar el sistema
+Con la interfaz gráfica (recomendado):
+```
+python INTERFAZ\iniciar.py
+```
+O por consola, con una vista previa de la estela:
+```
+python src\pose_osc.py --camara 1 --sin-mjpg --ancho 640 --alto 480
+```
+- El número de cámara depende de tu equipo (`python src\listar_camaras.py` lo muestra). Una webcam integrada suele ser la **0**; en la interfaz se cambia en el campo *Cámara* o en `INTERFAZ/config.json`.
+- `--sin-mjpg` es solo para cámaras como la PS3 Eye; con otras webcams puedes quitarlo.
+- **No ejecutes la interfaz y `pose_osc.py` a la vez:** ambos usan la cámara y el puerto OSC.
+
+### Otros comandos
+| Para… | Comando |
+|---|---|
+| Medir el sistema con videos propios | `python src\evaluar_sistema.py --videos clips\quieto.mp4:ninguna clips\brazos.mp4:brazos` |
+| Capturar nuevas posturas (teclas 1 brazos, 2 piernas, 3 ambas, 4 ninguna) | `python src\capturar_postura.py --camara 1 --sin-mjpg --ancho 640 --alto 480 --sesion adulto3` |
+| Grabar los 4 videos de un usuario | `python src\grabar_video.py --usuario usuario2 --camara 1 --sin-mjpg --ancho 640 --alto 480` |
+| Medir a un usuario en vivo (con la interfaz iniciada) | `python src\medir_en_vivo.py --usuario usuario2` |
+| Probar TouchDesigner sin cámara | `python src\osc_simulador.py` |
+
+### Problemas frecuentes
+| Problema | Causa y solución |
+|---|---|
+| «No se pudo abrir la cámara» | Otro programa la usa (Zoom, Teams, el navegador) o el número es otro: cierra esos programas y corre `python src\listar_camaras.py`. |
+| «No encuentro `pose_landmarker_full.task`» | Falta el paso 2: descarga el modelo y ponlo en `src/`. |
+| Sin clasificación de postura | Falta `modelos/postura.joblib`: corre el paso 3. |
+| TouchDesigner no reacciona | Revisa que el nodo OSC In escuche en el puerto **7000** y que la ventana de salida (F1) esté abierta. |
+| No aparece el video en *Pruebas* | El video está fuera de las carpetas de `INTERFAZ/config.json`; pulsa recargar. |
 
 ## Estructura del repositorio
 
