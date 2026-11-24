@@ -66,6 +66,7 @@ def hash_de_archivo(ruta):
 class _Union:
     """Union-find minimo para juntar bloques que comparten imagenes repetidas."""
     def __init__(self):
+        """Empieza vacío: cada elemento será su propio grupo hasta que se una con otro."""
         self.padre = {}
 
     def buscar(self, x):

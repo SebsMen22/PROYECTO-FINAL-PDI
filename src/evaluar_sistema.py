@@ -167,6 +167,7 @@ def evaluar_video(ruta, condicion, ruta_modelo, ruta_postura, ancho_proceso, max
     return fila
 
 
+# ------------------------------------------------------------------------ gráfica de resultados ---
 def dibujar_oscuridad(filas, ruta):
     """Deteccion (%) segun el brillo de la imagen, sin y con CLAHE. Una linea por video y por condicion."""
     try:
@@ -192,6 +193,7 @@ def dibujar_oscuridad(filas, ruta):
     plt.close(fig)
 
 
+# --------------------------------------------------------------------------- programa principal ---
 def main():
     """Lee los argumentos, evalua cada video en cada condicion y guarda el CSV, el resumen .md y la grafica."""
     ap = argparse.ArgumentParser(description="Evalua el sistema con videos y condiciones de imagen")

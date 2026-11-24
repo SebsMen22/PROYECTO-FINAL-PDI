@@ -11,6 +11,7 @@ import sys
 
 from PIL import Image, ImageDraw, ImageFont
 
+# --------------------------------------------------------------------------- 1. RUTAS Y COLORES ---
 AQUI = os.path.dirname(os.path.abspath(__file__))
 SALIDA = os.path.join(AQUI, "assets", "como_funciona.png")
 
@@ -20,6 +21,7 @@ MORADO, CIAN, MAGENTA, ORO = (139, 92, 246), (34, 211, 238), (244, 114, 182), (2
 E = 2                                                     # se dibuja al doble y se reduce: bordes suaves
 
 
+# ----------------------------------------- 2. FUNCIONES DE DIBUJO (tipografía, tarjeta, flecha) ---
 def fuente(tam, negrita=False):
     """Primera tipografia disponible (Windows, Linux o la que trae matplotlib)."""
     candidatos = (["C:/Windows/Fonts/segoeuib.ttf", "C:/Windows/Fonts/arialbd.ttf"] if negrita else
@@ -60,6 +62,7 @@ def flecha(d, x1, y1, x2, y2, color=MORADO):
         d.polygon([(x2 * E, y2 * E), ((x2 - 9) * E, (y2 - 14 * s) * E), ((x2 + 9) * E, (y2 - 14 * s) * E)], fill=color)
 
 
+# ----------------------------------------------------------------------- 3. ARMADO DEL DIAGRAMA ---
 def main():
     """Dibuja las 8 etapas, el puente OSC y la fila de TouchDesigner; guarda assets\\como_funciona.png."""
     W, H = 1800, 850

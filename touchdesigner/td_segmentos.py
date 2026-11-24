@@ -43,9 +43,11 @@ BRILLO_RAIZ, BRILLO_MEDIO, BRILLO_PUNTA = 0.45, 0.75, 1.0
 
 
 def _tono(color, k):
+    """Oscurece un color RGB multiplicándolo por k (0 a 1)."""
     return (color[0] * k, color[1] * k, color[2] * k)
 
 
+# -------------------------------------------------------- tabla de colores de cada articulación ---
 COLORES = {}
 for _lado in ('l', 'r'):
     COLORES[_lado + 's'] = _tono(COLOR_BRAZOS, BRILLO_RAIZ)     # hombro
@@ -58,6 +60,7 @@ for _lado in ('l', 'r'):
 _previo = {}               # posicion (px) de cada articulacion en el cuadro anterior; persiste entre cuadros
 
 
+# ----------------------------------------- funciones puras (se pueden probar sin TouchDesigner) ---
 def dibujar_segmentos(segs, ancho, alto, grosor):
     """
     Funcion pura (se puede probar sin TouchDesigner).
@@ -99,6 +102,7 @@ def tramos_a_dibujar(leer, cadenas, tronco, dibujar_tronco, umbral, ancho, alto,
     Si 'previo' trae la posicion del cuadro anterior, se agregan cintas intermedias entre las dos posiciones.
     """
     def punto(n):
+        """Posición (x, y) en píxeles de la articulación n (y contada desde abajo)."""
         return leer(n + '_x') * ancho, (1 - leer(n + '_y')) * alto
 
     segs = []
@@ -137,7 +141,9 @@ def tramos_a_dibujar(leer, cadenas, tronco, dibujar_tronco, umbral, ancho, alto,
     return segs
 
 
+# -------------------------------------------------------------------- callback de TouchDesigner ---
 def onCook(scriptOp):
+    """Se ejecuta en cada cuadro de TouchDesigner: lee los canales OSC, arma las cintas y las pinta en el Script TOP."""
     _ = absTime.frame                                  # obliga a recalcular en cada cuadro
     datos = op(NODO_DATOS)
     if datos is None:

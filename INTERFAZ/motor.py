@@ -41,6 +41,7 @@ C_BRAZOS, C_BRAZOS_ABIERTOS = (255, 217, 0), (13, 191, 255)      # cian / dorado
 C_PIERNAS, C_PIERNAS_ABIERTAS = (191, 25, 255), (0, 89, 255)     # magenta / naranja
 
 
+# ------------------------------------------------------------------------ 2. FUNCIONES DE APOYO ---
 def buscar_modelo_postura():
     """Ruta de modelos\\postura.joblib (el clasificador entrenado) o None si todavia no se ha entrenado."""
     ruta = os.path.join(RAIZ, "modelos", "postura.joblib")
@@ -57,6 +58,7 @@ def _ruta_modelo(cfg):
     return P.buscar_modelo()
 
 
+# ---------------------------------------------------- 3. EL MOTOR (un hilo que detecta y envía) ---
 class Motor:
     """Un hilo que lee la fuente, detecta, clasifica y envia OSC; la interfaz lo controla con sus atributos."""
 
@@ -127,6 +129,7 @@ class Motor:
         h, w = img.shape[:2]
 
         def pt(i):                       # landmark normalizado -> pixel (con espejo si es camara)
+            """Pixel (x, y) del punto i."""
             x = 1.0 - puntos[i].x if espejo else puntos[i].x
             return int(x * w), int(puntos[i].y * h)
 

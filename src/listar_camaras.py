@@ -13,12 +13,15 @@ En la ventana: cualquier tecla = pasar a la siguiente cámara, q = salir.
 """
 import cv2
 
+# -------------------------------------------------------------------------------- configuración ---
 # DirectShow es el "controlador" de video de Windows que mejor funciona con webcams USB.
 CAP_DSHOW = getattr(cv2, "CAP_DSHOW", 700)
 MAX_INDICES = 6  # se prueban los números 0 a 5
 
 
+# --------------------------------------------------------------------------- programa principal ---
 def main():
+    """Prueba los índices de cámara uno por uno, muestra cada imagen y al final lista los que funcionan."""
     encontradas = []
     for i in range(MAX_INDICES):
         cap = cv2.VideoCapture(i, CAP_DSHOW)

@@ -29,12 +29,14 @@ import cv2
 
 from motor import Motor, RAIZ
 
+# ------------------------------------------------------------------------ 1. RUTAS Y CONSTANTES ---
 AQUI = os.path.dirname(os.path.abspath(__file__))
 WEB = os.path.join(AQUI, "web")
 ASSETS = os.path.join(AQUI, "assets")
 EXT_VIDEO = (".mp4", ".mov", ".avi", ".mkv", ".m4v")
 
 
+# ------------------------------------------------------------------------- 2. ESTADO COMPARTIDO ---
 class Estado:
     """Lo unico compartido entre las peticiones: el motor activo, el ultimo mensaje y el 'latido' de la pagina."""
     def __init__(self, cfg):
@@ -55,6 +57,7 @@ class Estado:
             m.detener()
 
 
+# --------------------------------------------------------- 3. FUNCIONES DE APOYO (videos y CSV) ---
 def listar_videos(estado):
     """Busca videos en las carpetas de config.json. Devuelve la lista y deja un id -> ruta en el estado."""
     salida, ids = [], {}
@@ -88,6 +91,7 @@ def leer_csv(ruta):
         return list(csv.DictReader(f))
 
 
+# ---------------------------------------------------------------------------- 4. MANEJADOR HTTP ---
 def hacer_manejador(estado):
     """Crea la clase que atiende las peticiones HTTP (queda ligada al 'estado' compartido)."""
     class Manejador(BaseHTTPRequestHandler):
@@ -95,6 +99,7 @@ def hacer_manejador(estado):
         protocol_version = "HTTP/1.1"
 
         def log_message(self, *a):          # sin ruido en la terminal
+            """No imprime las peticiones HTTP en la consola."""
             pass
 
         # -------------------------------------------------------------------------- respuestas ---
@@ -252,6 +257,7 @@ def hacer_manejador(estado):
     return Manejador
 
 
+# ------------------------------------------------------------------------- 5. CREAR EL SERVIDOR ---
 def crear_servidor(cfg):
     """Crea el servidor en 127.0.0.1 (solo este computador). Devuelve (servidor, estado)."""
     estado = Estado(cfg)

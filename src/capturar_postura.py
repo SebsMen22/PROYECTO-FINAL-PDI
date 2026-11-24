@@ -1,7 +1,7 @@
 """
 capturar_postura.py  -  Shadow Dance
 ====================================
-Graba datos PROPIOS con la camara en vivo, ya etiquetados por el protocolo (sin etiquetar a mano):
+Graba datos PROPIOS con la camara en vivo, ya etiquetados por el protocolo:
 tu pulsas la tecla de la postura, hay una cuenta atras para que te pongas en posicion, y durante
 unos segundos se guardan los 33 puntos del cuerpo (solo numeros, no imagenes) con esa etiqueta.
 
@@ -63,14 +63,17 @@ class Toma:
     Recibe el tiempo desde afuera, asi se prueba sin camara.
     """
     def __init__(self, cuenta=3.0, duracion=12.0):
+        """cuenta = segundos de cuenta atrás; duracion = segundos que dura la grabación de la toma."""
         self.cuenta, self.duracion = cuenta, duracion
         self.clase, self.inicio, self.numero = None, None, 0
 
     def iniciar(self, clase, t):
+        """Empieza una toma de la postura 'clase' en el instante t."""
         self.clase, self.inicio = clase, t
         self.numero += 1
 
     def cancelar(self):
+        """Cancela la toma en curso (vuelve a 'espera')."""
         self.clase = self.inicio = None
 
     def estado(self, t):
@@ -96,6 +99,7 @@ def buscar_modelo():
 
 
 def main():
+    """Abre la cámara, muestra la ventana con las teclas 1 a 4 y guarda cada toma etiquetada en un CSV."""
     # --- 1. opciones de la linea de comandos ---
     ap = argparse.ArgumentParser(description="Captura de posturas etiquetadas con la camara en vivo")
     ap.add_argument("--camara", type=int, default=0)
